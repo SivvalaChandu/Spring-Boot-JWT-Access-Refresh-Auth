@@ -1,8 +1,9 @@
-package com.CRUD.CRUD_Mysql.controller;
+package com.Backend.JWTImp.controller;
 
 
-import com.CRUD.CRUD_Mysql.model.User;
-import com.CRUD.CRUD_Mysql.service.UserService;
+import com.Backend.JWTImp.jwt.JwtUtils;
+import com.Backend.JWTImp.model.User;
+import com.Backend.JWTImp.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,17 +14,15 @@ import java.util.List;
 @RequestMapping("/api/users")
 public class UserController {
 
-    private UserService userservice;
-    public UserController(UserService userservice) {
+    private final UserService userservice;
+    private final JwtUtils jwtUtils;
+    public UserController(UserService userservice, JwtUtils jwtUtils) {
+        this.jwtUtils = jwtUtils;
         this.userservice = userservice;
     }
 
-    @PostMapping
-    public ResponseEntity<User> saveUser(@RequestBody User user){
-        return new ResponseEntity<User>(userservice.saveUser(user), HttpStatus.CREATED);
-    }
 
-    @GetMapping
+    @GetMapping("/")
     public List<User> getAllUser(){
         return userservice.getAllUser();
     }

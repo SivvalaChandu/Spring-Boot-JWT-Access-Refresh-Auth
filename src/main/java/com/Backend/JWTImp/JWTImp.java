@@ -1,13 +1,13 @@
-package com.CRUD.CRUD_Mysql;
+package com.Backend.JWTImp;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class CrudMysqlApplication {
+public class JWTImp {
 
 	public static void main(String[] args) {
-		SpringApplication.run(CrudMysqlApplication.class, args);
+		SpringApplication.run(JWTImp.class, args);
 	}
 
 }

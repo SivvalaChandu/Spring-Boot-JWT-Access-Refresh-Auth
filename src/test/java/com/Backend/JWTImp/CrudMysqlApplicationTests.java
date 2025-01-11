@@ -1,4 +1,4 @@
-package com.CRUD.CRUD_Mysql;
+package com.Backend.JWTImp;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
