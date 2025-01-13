@@ -14,6 +14,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -35,43 +37,50 @@ public class AuthService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public String login(LoginDto loginDto){
-        Optional<User> user = userRepository.findByUsername(loginDto.getUsername());
-        if(user.isEmpty()){
-            throw new RuntimeException("Invalid username");
-        }
-
-//        if(!user.get().getPassword().equals(loginDto.getPassword())){
-//            throw new RuntimeException("Invalid password");
-//        }
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                loginDto.getUsername(),
-                loginDto.getPassword()
-        ));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        return jwtUtils.issueToken(loginDto.getUsername(),"ROLE_USER");
+    private Map<String, String> generateTokens(String username, String role) {
+        Map<String, String> tokens = new HashMap<>();
+        tokens.put("access_token", jwtUtils.issueAccessToken(username, role));
+        tokens.put("refresh_token", jwtUtils.issueRefreshToken(username));
+        return tokens;
     }
 
-    public String register(User newUser){
-        Optional<User> user_check = userRepository.findByUsername(newUser.getUsername());
-        if(user_check.isPresent()){
+    public Map<String, String> login(LoginDto loginDto){
+        User user = userRepository.findByUsername(loginDto.getUsername())
+                .orElseThrow(() -> new RuntimeException("Invalid username"));
+
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword())
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            String role = user.getRoles().stream()
+                    .findFirst()
+                    .map(Role::getName)
+                    .orElse("ROLE_USER");
+
+            return generateTokens(loginDto.getUsername(), role);
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid credentials");
+        }
+    }
+
+    public Map<String, String> register(User newUser) {
+        if (userRepository.findByUsername(newUser.getUsername()).isPresent()) {
             throw new RuntimeException("Username already exists");
         }
+
+        Role role = roleRepository.findByName("ROLE_USER")
+                .orElseThrow(() -> new RuntimeException("Role not found"));
+
         User user = new User();
         user.setId(newUser.getId());
         user.setUsername(newUser.getUsername());
         user.setEmail(newUser.getEmail());
         user.setPassword(passwordEncoder.encode(newUser.getPassword()));
-
-        Role role = roleRepository.findByName("ROLE_USER").orElseThrow(() -> new RuntimeException("Role not found"));
         user.setRoles(Set.of(role));
-        System.out.println(role);
+
         userRepository.save(user);
-//        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-//                user.getUsername(),
-//                user.getPassword()
-//        ));
-//        SecurityContextHolder.getContext().setAuthentication(authentication);
-        return jwtUtils.issueToken(newUser.getUsername(), role.getName());
+        return generateTokens(user.getUsername(), role.getName());
     }
 }
